@@ -1,0 +1,1 @@
+from gym_sat_inspection.envs.sat_inspection_env import SatInspectionEnv
