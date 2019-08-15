@@ -12,6 +12,8 @@ class SatInspectionEnv(gym.Env):
     def __init__(self, init_state, map, inspOE_0, targOE_0, RTN_0, dt, num_photos, tau):
         self.init_state = list(init_state)
         self.state = list(init_state)
+        self.RTNlist = [RTN_0]
+        self.RTNlistbest = []
         self.map_0 = np.copy(map)
         self.map = np.copy(map)
         self.dt = dt + 0
@@ -28,6 +30,7 @@ class SatInspectionEnv(gym.Env):
         self.tau = tau
         self.done = 0
         self.reward = 0
+        self.best_reward = 0
         self.min_action = np.array([-1.0, -1.0, -1.0, -1.0])
         self.max_action = np.array([1.0, 1.0, 1.0, 1.0])
         self.no_image_count = 0
@@ -43,6 +46,13 @@ class SatInspectionEnv(gym.Env):
     def step(self, action):
         state = self.state
         ind = action[0]
+        """
+        if ind<0:
+            dROE = np.array([0, 0, 0, 0, 0, 0])
+            dROE[1]= math.sqrt(mu)*(math.pow(deputyA,-1.5)-math.pow(chiefA,-1.5))
+        else:
+            dROE = action[1:5]
+        """
         if ind < 0:
             true_action = 0.0 * action[1:4]
         else:
@@ -125,6 +135,7 @@ class SatInspectionEnv(gym.Env):
             print('Final Percent Coverage: ', self.percent_coverage)
         print('Actions Left', self.photos_left, 'RTN: ', newRTN, 'Fuel Consumed', fuel_consumed,
               'New Features', newFeatures)
+        self.RTNlist.append(newRTN)
         return [self.state, self.reward, self.done, self.map]
 
     def reset(self):
@@ -132,9 +143,10 @@ class SatInspectionEnv(gym.Env):
         self.state = list(self.init_state)
         """
         w0 = self.init_state[9:12]
-        cov = np.linalg.norm(w0)*np.eye
+        cov = (np.linalg.norm(w0))*np.eye(3)
         w = np.random.multivariate_normal(w0, cov, 1)
-        self.state[9:12] = list(w)
+        print("W = ",w)
+        self.state[9:12] = list(w[0])
         """
         self.inspOE = np.copy(self.inspOE_0)
         self.targOE = np.copy(self.targOE_0)
@@ -143,8 +155,15 @@ class SatInspectionEnv(gym.Env):
         self.Rot = np.matmul(util.rotationMatrix(2, phi), util.rotationMatrix(3, theta))
         self.map = np.copy(self.map_0)
         self.done = 0
+        if self.reward > self.best_reward:
+            self.best_reward = self.reward
+            self.RTNlistbest = self.RTNlist
+        else:
+            self.RTNlist = [self.RTN_0]
         self.reward = 0
         return self.state
-
+    
+    def getBestRun(self):
+        return self.RTNlistbest, self.best_reward
     def render(self):
         print(self.map)

@@ -115,6 +115,15 @@ def mapActiontoROE(action,deputyU,deputyA):
     dROE = np.matmul(gamma,action)
     return dROE
 
+def mapdROEtoThrust(dROE,deputyU, deputyA):
+    a = deputyA
+    mu = 398600
+    n = math.sqrt(float(mu)/math.pow(a,3))
+    u = deputyU
+    gamma = (1/(n*a))*np.array([[0,2,0],[-2,0,0],[math.sin(u),2*math.cos(u),0],[-math.cos(u),2*math.sin(u),0],[0,0,math.cos(u)],[0,0,math.sin(u)]])
+    action = np.matmul(gamma.T,dROE)
+    return action
+
 def rotationMatrix(axis,theta):
     if axis == 1:
         R = np.array([[1,0,0],[0, math.cos(theta),math.sin(theta)],[0,-math.sin(theta),math.cos(theta)]])
